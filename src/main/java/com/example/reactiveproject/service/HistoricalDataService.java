@@ -23,15 +23,27 @@ public class HistoricalDataService {
   private TxnRpsy txnRpsy;
 
   public HistoricalDataService(WebClient.Builder webClientBuilder) {
-    this.iexClient = webClientBuilder.baseUrl("http://localhost:8090").filter(logRequest()).build();
+    this.iexClient = webClientBuilder.baseUrl("http://localhost:8090").build();
   }
 
+  /**
+   * Calls LocalIex REST endpoint to return StockData objects based on criteria
+   * @param symbol Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
+   * @param range Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
+   * @return zero or more StockData objects matching criteria
+   */
   public Flux<StockData> getHistoricalDataForSymbolAndRange(String symbol, String range) {
     return this.iexClient.get()
         .uri("/stock/{symbol}/chart/{range}", symbol, range)
         .retrieve().bodyToFlux(StockData.class);
   }
 
+  /**
+   * Calls LocalIex REST endpoint to get a single StockData for a given symbol and date.
+   * Then, create a transaction object and save to DB.
+   * @param recordTxnRequest RecordTxnRequest object which holds request info (symbol, firm, date)
+   * @return Transaction saved in DB
+   */
   public Mono<Transaction> recordTransaction(RecordTxnRequest recordTxnRequest) {
 
     Mono<StockData> stockData = this.iexClient.get()
@@ -41,14 +53,5 @@ public class HistoricalDataService {
     Mono<Transaction> txn = stockData.map(s -> new Transaction(recordTxnRequest, s));
 
     return txn.flatMap(t -> txnRpsy.save(t));
-  }
-
-  private ExchangeFilterFunction logRequest() {
-    return (clientRequest, next) -> {
-      log.info("Request: {"+clientRequest.method()+"} {"+clientRequest.url()+"}");
-      clientRequest.headers()
-          .forEach((name, values) -> values.forEach(value -> log.info("{"+name+"}={"+value+"}")));
-      return next.exchange(clientRequest);
-    };
   }
 }

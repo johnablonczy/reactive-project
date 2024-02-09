@@ -21,6 +21,12 @@ public class HistoricalDataController {
   @Autowired
   HistoricalDataService historicalDataService;
 
+  /**
+   * Call the historicalDataService to return matching StockData objects.
+   * @param symbol Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
+   * @param range Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
+   * @return zero or more StockData objects matching the criteria
+   */
   @GetMapping(path = "/prices")
   public Flux<StockData> getPricesWithSymbolAndRange(
       @RequestParam String symbol,
@@ -29,10 +35,16 @@ public class HistoricalDataController {
     return historicalDataService.getHistoricalDataForSymbolAndRange(symbol, range);
   }
 
+  /**
+   * Call the historicalDataService to record a transaction based on request info
+   * @param recordTxnRequest RecordTxnRequest object which holds request info (symbol, firm, date)
+   * @return Confirmation of successful record keeping.
+   */
   @PostMapping(path = "/transaction",
   consumes = MediaType.APPLICATION_JSON_VALUE,
   produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<Transaction> recordTransaction(@RequestBody RecordTxnRequest recordTxnRequest) {
-    return historicalDataService.recordTransaction(recordTxnRequest);
+  public Mono<String> recordTransaction(@RequestBody RecordTxnRequest recordTxnRequest) {
+    Mono<Transaction> txn = historicalDataService.recordTransaction(recordTxnRequest);
+    return txn.map(t -> "Transaction successfully recorded txnId="+t.getTxnId());
   }
 }
