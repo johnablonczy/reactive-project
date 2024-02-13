@@ -23,7 +23,7 @@ public class HistoricalDataService {
   private TxnRpsy txnRpsy;
 
   public HistoricalDataService(WebClient.Builder webClientBuilder) {
-    this.iexClient = webClientBuilder.baseUrl("http://localhost:8090").build();
+    iexClient = webClientBuilder.baseUrl("http://localhost:8090").build();
   }
 
   /**
@@ -33,7 +33,7 @@ public class HistoricalDataService {
    * @return zero or more StockData objects matching criteria
    */
   public Flux<StockData> getHistoricalDataForSymbolAndRange(String symbol, String range) {
-    return this.iexClient.get()
+    return iexClient.get()
         .uri("/stock/{symbol}/chart/{range}", symbol, range)
         .retrieve().bodyToFlux(StockData.class);
   }
@@ -46,8 +46,8 @@ public class HistoricalDataService {
    */
   public Mono<Transaction> recordTransaction(RecordTxnRequest recordTxnRequest) {
 
-    Mono<StockData> stockData = this.iexClient.get()
-        .uri("/stock/{symbol}/single/{date}", recordTxnRequest.getSymbol(), recordTxnRequest.getTxnDate())
+    Mono<StockData> stockData = iexClient.get()
+        .uri("/stock/{symbol}/single/{date}", recordTxnRequest.getSymbol().toUpperCase(), recordTxnRequest.getTxnDate())
         .retrieve().bodyToMono(StockData.class);
 
     Mono<Transaction> txn = stockData.map(s -> new Transaction(recordTxnRequest, s));

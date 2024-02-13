@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 @Table("transactions")
 public class Transaction {
   @PrimaryKey
+  @Builder.Default
   private UUID txnId = UUID.randomUUID();
   private String symbol;
   private String firm;
@@ -32,6 +33,7 @@ public class Transaction {
     this.symbol = recordTxnRequest.getSymbol();
     this.firm = recordTxnRequest.getFirm();
     this.txnDate = recordTxnRequest.getTxnDate();
+    this.txnId = recordTxnRequest.getTxnId();
 
     this.close = stockData.getClose();
     this.high = stockData.getHigh();
