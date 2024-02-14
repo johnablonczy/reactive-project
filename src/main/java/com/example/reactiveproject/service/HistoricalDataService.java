@@ -1,10 +1,13 @@
 package com.example.reactiveproject.service;
 
+import com.example.reactiveproject.domain.GetPricesRequest;
 import com.example.reactiveproject.domain.RecordTxnRequest;
 import com.example.reactiveproject.domain.StockData;
 import com.example.reactiveproject.domain.Transaction;
 import com.example.reactiveproject.repository.TxnRpsy;
 import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,23 +18,29 @@ import reactor.core.publisher.Mono;
 
 @Service
 @Log
+@AllArgsConstructor
 public class HistoricalDataService {
 
-  private final WebClient iexClient = WebClient.create("http://localhost:8091");;
+  private final WebClient iexClient = WebClient.create("http://localhost:8091");
 
-  @Autowired
   private TxnRpsy txnRpsy;
 
   /**
    * Calls LocalIex REST endpoint to return StockData objects based on criteria
-   * @param symbol Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
-   * @param range Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
+   * @param getPricesRequestMono Request object which holds symbol and range.
+   * For Iex API:
+   * Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
+   * Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
    * @return zero or more StockData objects matching criteria
    */
-  public Flux<StockData> getHistoricalDataForSymbolAndRange(String symbol, String range) {
-    return iexClient.get()
-        .uri("/stock/{symbol}/chart/{range}", symbol, range)
-        .retrieve().bodyToFlux(StockData.class);
+  public Flux<StockData> getHistoricalDataForSymbolAndRange(Mono<GetPricesRequest> getPricesRequestMono) {
+//    return iexClient.get()
+//        .uri("/stock/{symbol}/chart/{range}", symbol, range)
+//        .retrieve().bodyToFlux(StockData.class);
+
+    return getPricesRequestMono.flatMapMany(req -> iexClient.get()
+        .uri("/stock/{symbol}/chart/{range}", req.getSymbol(), req.getRange())
+        .retrieve().bodyToFlux(StockData.class));
   }
 
   /**

@@ -1,9 +1,11 @@
 package com.example.reactiveproject.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.ACCEPT;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import com.example.reactiveproject.domain.GetPricesRequest;
 import com.example.reactiveproject.domain.RecordTxnRequest;
 import com.example.reactiveproject.domain.StockData;
 import com.example.reactiveproject.domain.Transaction;
@@ -13,6 +15,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -29,6 +33,9 @@ public class HistoricalDataControllerTest {
   @Autowired
   WebTestClient webTestClient;
 
+  @InjectMocks
+  HistoricalDataController historicalDataController;
+
   @MockBean
   private HistoricalDataService historicalDataService;
 
@@ -43,7 +50,7 @@ public class HistoricalDataControllerTest {
         generateTestStockData(4)
     );
 
-    when(historicalDataService.getHistoricalDataForSymbolAndRange("aapl", "1w"))
+    when(historicalDataService.getHistoricalDataForSymbolAndRange(any(Mono.class)))
         .thenReturn(response);
 
     Flux<StockData> stockDataFlux = webTestClient.get().uri("/prices?symbol=aapl&range=1w").header(ACCEPT, APPLICATION_JSON_VALUE)

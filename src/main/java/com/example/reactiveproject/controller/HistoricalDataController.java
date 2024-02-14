@@ -1,5 +1,6 @@
 package com.example.reactiveproject.controller;
 
+import com.example.reactiveproject.domain.GetPricesRequest;
 import com.example.reactiveproject.domain.RecordTxnRequest;
 import com.example.reactiveproject.domain.StockData;
 import com.example.reactiveproject.domain.Transaction;
@@ -57,7 +58,9 @@ public class HistoricalDataController {
           .symbol("Improper price request received: Range not accepted range={"+range+"}. Use an accepted range: ytd, nD, nW, nY where n is an integer")
           .build());
     }
-    return historicalDataService.getHistoricalDataForSymbolAndRange(symbol, range);
+
+
+    return historicalDataService.getHistoricalDataForSymbolAndRange(Mono.just(new GetPricesRequest(symbol.toUpperCase(), range.toUpperCase())));
   }
 
   /**
