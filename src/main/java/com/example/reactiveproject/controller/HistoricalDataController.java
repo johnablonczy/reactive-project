@@ -52,7 +52,7 @@ public class HistoricalDataController {
               .symbol("Improper price request received: Symbol not accepted symbol={"+symbol+"}. Use an accepted symbol: "+acceptedSymbols)
           .build());
     }
-    if(!(range.equals("YTD") || range.matches("^\\d+[YWD]$"))){
+    if(!(range.equalsIgnoreCase("YTD") || range.toUpperCase().matches("^\\d+[YWD]$"))){
       return Flux.just(StockData.builder()
           .symbol("Improper price request received: Range not accepted range={"+range+"}. Use an accepted range: ytd, nD, nW, nY where n is an integer")
           .build());

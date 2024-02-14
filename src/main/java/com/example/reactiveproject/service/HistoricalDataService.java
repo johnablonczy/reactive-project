@@ -17,14 +17,10 @@ import reactor.core.publisher.Mono;
 @Log
 public class HistoricalDataService {
 
-  private final WebClient iexClient;
+  private final WebClient iexClient = WebClient.create("http://localhost:8091");;
 
   @Autowired
   private TxnRpsy txnRpsy;
-
-  public HistoricalDataService(WebClient.Builder webClientBuilder) {
-    iexClient = webClientBuilder.baseUrl("http://localhost:8090").build();
-  }
 
   /**
    * Calls LocalIex REST endpoint to return StockData objects based on criteria
@@ -45,7 +41,6 @@ public class HistoricalDataService {
    * @return Transaction saved in DB
    */
   public Mono<Transaction> recordTransaction(RecordTxnRequest recordTxnRequest) {
-
     Mono<StockData> stockData = iexClient.get()
         .uri("/stock/{symbol}/single/{date}", recordTxnRequest.getSymbol().toUpperCase(), recordTxnRequest.getTxnDate())
         .retrieve().bodyToMono(StockData.class);
