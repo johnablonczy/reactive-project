@@ -44,7 +44,7 @@ public class HistoricalDataController {
    * @return zero or more StockData objects matching the criteria
    */
   @GetMapping(path = "/prices")
-  public Flux<StockData> getPricesWithSymbolAndRange(
+  public Flux<StockData> getPricesFromSymbolAndRange(
       @RequestParam String symbol,
       @RequestParam String range
   ) {
@@ -64,6 +64,34 @@ public class HistoricalDataController {
   }
 
   /**
+   * POST request for prices from symbol and range
+   * @param getPricesRequest Request object which holds symbol and range.
+   *                         Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
+   *                         Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
+   * @return zero or more StockData objects matching the criteria
+   */
+  @PostMapping(path = "/prices",
+          consumes = MediaType.APPLICATION_JSON_VALUE,
+          produces = MediaType.APPLICATION_JSON_VALUE)
+  public Flux<StockData> postPricesFromSymbolAndRange(@RequestBody GetPricesRequest getPricesRequest) {
+    Mono<GetPricesRequest> getPricesRequestMono = Mono.just(getPricesRequest);
+
+    return getPricesRequestMono.flatMapMany(req -> {
+      if(!acceptedSymbols.contains(req.getSymbol().toUpperCase())) {
+        return Flux.just(StockData.builder()
+                .symbol("Improper price request received: Symbol not accepted symbol={"+req.getSymbol()+"}. Use an accepted symbol: "+acceptedSymbols)
+                .build());
+      } else if(!(req.getRange().equalsIgnoreCase("YTD") || req.getRange().toUpperCase().matches("^\\d+[YWD]$"))){
+        return Flux.just(StockData.builder()
+                .symbol("Improper price request received: Range not accepted range={"+req.getRange()+"}. Use an accepted range: ytd, nD, nW, nY where n is an integer")
+                .build());
+      } else {
+        return historicalDataService.getHistoricalDataForSymbolAndRange(Mono.just(new GetPricesRequest(req.getSymbol().toUpperCase(), req.getRange().toUpperCase())));
+      }
+    });
+  }
+
+  /**
    * Call the historicalDataService to record a transaction based on request info
    * @param recordTxnRequest RecordTxnRequest object which holds request info (symbol, firm, date)
    * @return Confirmation of successful record keeping.
@@ -72,13 +100,17 @@ public class HistoricalDataController {
   consumes = MediaType.APPLICATION_JSON_VALUE,
   produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<String> recordTransaction(@RequestBody RecordTxnRequest recordTxnRequest) {
-    if(!acceptedSymbols.contains(recordTxnRequest.getSymbol().toUpperCase())) {
-      return Mono.just("Improper transaction request received: Symbol not accepted symbol={"+recordTxnRequest.getSymbol()+"}. Use an accepted symbol: "+acceptedSymbols);
-    }
-    if(recordTxnRequest.getTxnDate().isAfter(LocalDate.of(2024, 2, 1))) {
-      return Mono.just("Improper transaction request received: Date past 2024-02-01 date={"+recordTxnRequest.getTxnDate()+"}. Use a date on or before 2024-02-01");
-    }
-    Mono<Transaction> txn = historicalDataService.recordTransaction(recordTxnRequest);
-    return txn.map(t -> "Transaction successfully recorded txnId="+t.getTxnId());
+    Mono<RecordTxnRequest> recordTxnRequestMono = Mono.just(recordTxnRequest);
+
+    return recordTxnRequestMono.flatMap(req -> {
+      if(!acceptedSymbols.contains(req.getSymbol().toUpperCase())) {
+        return Mono.just("Improper transaction request received: Symbol not accepted symbol={"+req.getSymbol()+"}. Use an accepted symbol: "+acceptedSymbols);
+      }
+      if(req.getTxnDate().isAfter(LocalDate.of(2024, 2, 1))) {
+        return Mono.just("Improper transaction request received: Date past 2024-02-01 date={"+req.getTxnDate()+"}. Use a date on or before 2024-02-01");
+      }
+      Mono<Transaction> txn = historicalDataService.recordTransaction(req);
+      return txn.map(t -> "Transaction successfully recorded txnId="+t.getTxnId());
+    });
   }
 }

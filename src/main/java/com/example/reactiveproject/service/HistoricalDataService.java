@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -21,23 +22,18 @@ import reactor.core.publisher.Mono;
 @AllArgsConstructor
 public class HistoricalDataService {
 
-  private final WebClient iexClient = WebClient.create("http://localhost:8091");
+  private WebClient iexClient;
 
   private TxnRpsy txnRpsy;
 
   /**
    * Calls LocalIex REST endpoint to return StockData objects based on criteria
    * @param getPricesRequestMono Request object which holds symbol and range.
-   * For Iex API:
-   * Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
-   * Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
+   *                             Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
+   *                             Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
    * @return zero or more StockData objects matching criteria
    */
   public Flux<StockData> getHistoricalDataForSymbolAndRange(Mono<GetPricesRequest> getPricesRequestMono) {
-//    return iexClient.get()
-//        .uri("/stock/{symbol}/chart/{range}", symbol, range)
-//        .retrieve().bodyToFlux(StockData.class);
-
     return getPricesRequestMono.flatMapMany(req -> iexClient.get()
         .uri("/stock/{symbol}/chart/{range}", req.getSymbol(), req.getRange())
         .retrieve().bodyToFlux(StockData.class));

@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,19 +28,17 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @WebFluxTest(HistoricalDataController.class)
-@RunWith(SpringRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataControllerTest {
-
-  @Autowired
-  WebTestClient webTestClient;
 
   @InjectMocks
   HistoricalDataController historicalDataController;
 
-  @MockBean
+  @Mock
   private HistoricalDataService historicalDataService;
 
   @Test
+  @SuppressWarnings("unchecked")
   public void testGetHistoricalData() {
 
     Flux<StockData> response = Flux.just(
@@ -53,11 +52,7 @@ public class HistoricalDataControllerTest {
     when(historicalDataService.getHistoricalDataForSymbolAndRange(any(Mono.class)))
         .thenReturn(response);
 
-    Flux<StockData> stockDataFlux = webTestClient.get().uri("/prices?symbol=aapl&range=1w").header(ACCEPT, APPLICATION_JSON_VALUE)
-        .exchange()
-        .expectStatus().isOk()
-        .returnResult(StockData.class)
-        .getResponseBody();
+    Flux<StockData> stockDataFlux = historicalDataController.getPricesFromSymbolAndRange("aapl", "1w");
 
     StepVerifier.create(stockDataFlux)
         .expectNext(generateTestStockData(0))
@@ -70,11 +65,7 @@ public class HistoricalDataControllerTest {
 
   @Test
   public void testGetHistoricalDataBadSymbol() {
-    Flux<StockData> stockDataFlux = webTestClient.get().uri("/prices?symbol=asdf&range=1w").header(ACCEPT, APPLICATION_JSON_VALUE)
-        .exchange()
-        .expectStatus().isOk()
-        .returnResult(StockData.class)
-        .getResponseBody();
+    Flux<StockData> stockDataFlux = historicalDataController.getPricesFromSymbolAndRange("asdf", "1w");
 
     StepVerifier.create(stockDataFlux)
         .expectNext(StockData.builder()
@@ -85,11 +76,7 @@ public class HistoricalDataControllerTest {
 
   @Test
   public void testGetHistoricalDataBadRange() {
-    Flux<StockData> stockDataFlux = webTestClient.get().uri("/prices?symbol=aapl&range=1h").header(ACCEPT, APPLICATION_JSON_VALUE)
-        .exchange()
-        .expectStatus().isOk()
-        .returnResult(StockData.class)
-        .getResponseBody();
+    Flux<StockData> stockDataFlux = historicalDataController.getPricesFromSymbolAndRange("aapl", "1h");
 
     StepVerifier.create(stockDataFlux)
         .expectNext(StockData.builder()
@@ -134,12 +121,7 @@ public class HistoricalDataControllerTest {
     when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
         Mono.just(transaction));
 
-    Flux<String> recordTransactionResponse = webTestClient.post().uri("/transaction").header(ACCEPT, APPLICATION_JSON_VALUE)
-        .bodyValue(recordTxnRequest)
-        .exchange()
-        .expectStatus().isOk()
-        .returnResult(String.class)
-        .getResponseBody();
+    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(recordTxnRequest);
 
     StepVerifier.create(recordTransactionResponse)
         .expectNext("Transaction successfully recorded txnId="+uuid)
@@ -157,25 +139,7 @@ public class HistoricalDataControllerTest {
         .txnDate(LocalDate.ofYearDay(2024, 30))
         .build();
 
-    StockData stockData = StockData.builder()
-        .symbol("AAPL")
-        .open(BigDecimal.TEN)
-        .close(BigDecimal.valueOf(20))
-        .low(BigDecimal.ONE)
-        .high(BigDecimal.valueOf(30))
-        .build();
-
-    Transaction transaction = new Transaction(recordTxnRequest, stockData);
-
-    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
-        Mono.just(transaction));
-
-    Flux<String> recordTransactionResponse = webTestClient.post().uri("/transaction").header(ACCEPT, APPLICATION_JSON_VALUE)
-        .bodyValue(recordTxnRequest)
-        .exchange()
-        .expectStatus().isOk()
-        .returnResult(String.class)
-        .getResponseBody();
+    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(recordTxnRequest);
 
     StepVerifier.create(recordTransactionResponse)
         .expectNext("Improper transaction request received: Symbol not accepted symbol={ASDF}. Use an accepted symbol: [AAPL, AMZN, BAC, IBM, GOOG, MS, MSFT, TSLA]")
@@ -193,25 +157,7 @@ public class HistoricalDataControllerTest {
         .txnDate(LocalDate.of(2024, 2, 2))
         .build();
 
-    StockData stockData = StockData.builder()
-        .symbol("AAPL")
-        .open(BigDecimal.TEN)
-        .close(BigDecimal.valueOf(20))
-        .low(BigDecimal.ONE)
-        .high(BigDecimal.valueOf(30))
-        .build();
-
-    Transaction transaction = new Transaction(recordTxnRequest, stockData);
-
-    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
-        Mono.just(transaction));
-
-    Flux<String> recordTransactionResponse = webTestClient.post().uri("/transaction").header(ACCEPT, APPLICATION_JSON_VALUE)
-        .bodyValue(recordTxnRequest)
-        .exchange()
-        .expectStatus().isOk()
-        .returnResult(String.class)
-        .getResponseBody();
+    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(recordTxnRequest);
 
     StepVerifier.create(recordTransactionResponse)
         .expectNext("Improper transaction request received: Date past 2024-02-01 date={2024-02-02}. Use a date on or before 2024-02-01")

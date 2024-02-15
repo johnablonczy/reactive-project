@@ -3,7 +3,6 @@ package com.example.reactiveproject.service;
 
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.example.reactiveproject.domain.RecordTxnRequest;
@@ -15,23 +14,22 @@ import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @WebFluxTest(HistoricalDataService.class)
-@RunWith(SpringRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataServiceTest {
 
-  @MockBean
-  WebClient iexClientMock;
+  @Mock
+  WebClient iexClient;
 
-  @MockBean
+  @Mock
   TxnRpsy txnRpsy;
 
   @Mock
@@ -46,7 +44,7 @@ public class HistoricalDataServiceTest {
   @SuppressWarnings(("rawtypes"))
   private WebClient.ResponseSpec responseSpecMock;
 
-  @Autowired
+  @InjectMocks
   HistoricalDataService historicalDataService;
 
   @Test
@@ -71,16 +69,16 @@ public class HistoricalDataServiceTest {
 
     Transaction transaction = new Transaction(recordTxnRequest, stockData);
 
-    when(iexClientMock.get())
+    when(iexClient.get())
         .thenReturn(requestHeadersUriSpecMock);
-    when(requestHeadersUriSpecMock.uri(anyString()))
+    when(requestHeadersUriSpecMock.uri("/stock/{symbol}/single/{date}", recordTxnRequest.getSymbol().toUpperCase(), recordTxnRequest.getTxnDate()))
         .thenReturn(requestHeadersSpecMock);
     when(requestHeadersSpecMock.retrieve())
         .thenReturn(responseSpecMock);
     when(responseSpecMock.bodyToMono(StockData.class))
         .thenReturn(Mono.just(stockData));
 
-    when(txnRpsy.save(any()))
+    when(txnRpsy.save(any(Transaction.class)))
         .thenReturn(Mono.just(transaction));
 
     Mono<Transaction> transactionMono = historicalDataService.recordTransaction(recordTxnRequest);
