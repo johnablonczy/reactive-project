@@ -5,14 +5,9 @@ import com.example.reactiveproject.domain.RecordTxnRequest;
 import com.example.reactiveproject.domain.StockData;
 import com.example.reactiveproject.domain.Transaction;
 import com.example.reactiveproject.repository.TxnRpsy;
-import java.time.LocalDate;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,12 +40,13 @@ public class HistoricalDataService {
    * @param recordTxnRequest RecordTxnRequest object which holds request info (symbol, firm, date)
    * @return Transaction saved in DB
    */
-  public Mono<Transaction> recordTransaction(RecordTxnRequest recordTxnRequest) {
-    Mono<StockData> stockData = iexClient.get()
-        .uri("/stock/{symbol}/single/{date}", recordTxnRequest.getSymbol().toUpperCase(), recordTxnRequest.getTxnDate())
-        .retrieve().bodyToMono(StockData.class);
+  public Mono<Transaction> recordTransaction(Mono<RecordTxnRequest> recordTxnRequest) {
 
-    Mono<Transaction> txn = stockData.map(s -> new Transaction(recordTxnRequest, s));
+    recordTxnRequest.map(req -> {
+      Mono<Transaction> s = Transaction.fromStockDataMono(iexClient.get()
+          .uri("/stock/{symbol}/single/{date}", req.getSymbol().toUpperCase(), req.getTxnDate())
+          .retrieve().bodyToMono(StockData.class));
+    })
 
     return txn.flatMap(t -> txnRpsy.save(t));
   }

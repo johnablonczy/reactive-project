@@ -40,4 +40,32 @@ public class Transaction {
     this.low = stockData.getLow();
     this.open = stockData.getOpen();
   }
+
+  public static Transaction fromTxnRequest(RecordTxnRequest recordTxnRequest) {
+    Transaction fromTxnRequest = new Transaction();
+    fromTxnRequest.symbol = recordTxnRequest.getSymbol();
+    fromTxnRequest.firm = recordTxnRequest.getFirm();
+    fromTxnRequest.txnDate = recordTxnRequest.getTxnDate();
+    fromTxnRequest.txnId = recordTxnRequest.getTxnId();
+    return fromTxnRequest;
+  }
+
+  public static Mono<Transaction> fromStockDataMono(Mono<StockData> stockData) {
+    return stockData.map(s -> Transaction.builder().close(s.getClose()).high(s.getHigh()).low(s.getLow()).open(s.getOpen()).build());
+  }
+
+  public Transaction stitchStockData(StockData stockData) {
+    this.close = stockData.getClose();
+    this.high = stockData.getHigh();
+    this.low = stockData.getLow();
+    this.open = stockData.getOpen();
+  }
+
+  public Transaction stitchTxnReqData(RecordTxnRequest recordTxnRequest) {
+    this.symbol = recordTxnRequest.getSymbol();
+    this.firm = recordTxnRequest.getFirm();
+    this.txnDate = recordTxnRequest.getTxnDate();
+    this.txnId = recordTxnRequest.getTxnId();
+    return this;
+  }
 }

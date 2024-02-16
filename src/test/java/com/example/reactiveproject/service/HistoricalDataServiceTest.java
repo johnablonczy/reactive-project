@@ -3,6 +3,9 @@ package com.example.reactiveproject.service;
 
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.reactiveproject.domain.RecordTxnRequest;
@@ -25,28 +28,21 @@ import reactor.test.StepVerifier;
 @WebFluxTest(HistoricalDataService.class)
 @RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataServiceTest {
-
   @Mock
   WebClient iexClient;
-
   @Mock
   TxnRpsy txnRpsy;
-
+  @InjectMocks
+  HistoricalDataService historicalDataService;
   @Mock
   @SuppressWarnings("rawtypes")
   private WebClient.RequestHeadersUriSpec requestHeadersUriSpecMock;
-
   @Mock
   @SuppressWarnings("rawtypes")
   private WebClient.RequestHeadersSpec requestHeadersSpecMock;
-
   @Mock
   @SuppressWarnings(("rawtypes"))
   private WebClient.ResponseSpec responseSpecMock;
-
-  @InjectMocks
-  HistoricalDataService historicalDataService;
-
   @Test
   @SuppressWarnings("unchecked")
   public void testRecordTransaction() {
@@ -82,6 +78,10 @@ public class HistoricalDataServiceTest {
         .thenReturn(Mono.just(transaction));
 
     Mono<Transaction> transactionMono = historicalDataService.recordTransaction(recordTxnRequest);
+
+    verify(responseSpecMock).bodyToMono(StockData.class);
+
+    verify(txnRpsy, times(1)).save(any());
 
     StepVerifier.create(transactionMono)
         .expectNext(transaction)
