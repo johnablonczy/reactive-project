@@ -109,7 +109,7 @@ public class HistoricalDataController {
       if(req.getTxnDate().isAfter(LocalDate.of(2024, 2, 1))) {
         return Mono.just("Improper transaction request received: Date past 2024-02-01 date={"+req.getTxnDate()+"}. Use a date on or before 2024-02-01");
       }
-      Mono<Transaction> txn = historicalDataService.recordTransaction(req);
+      Mono<Transaction> txn = historicalDataService.recordTransaction(Mono.just(req));
       return txn.map(t -> "Transaction successfully recorded txnId="+t.getTxnId());
     });
   }

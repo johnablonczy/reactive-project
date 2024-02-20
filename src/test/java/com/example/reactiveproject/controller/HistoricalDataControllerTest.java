@@ -114,7 +114,7 @@ public class HistoricalDataControllerTest {
 
     Transaction transaction = new Transaction(recordTxnRequest, stockData);
 
-    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
+    when(historicalDataService.recordTransaction(Mono.just(recordTxnRequest))).thenReturn(
         Mono.just(transaction));
 
     Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(recordTxnRequest);

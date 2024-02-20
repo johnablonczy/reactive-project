@@ -42,12 +42,10 @@ public class HistoricalDataService {
    */
   public Mono<Transaction> recordTransaction(Mono<RecordTxnRequest> recordTxnRequest) {
 
-    recordTxnRequest.map(req -> {
-      Mono<Transaction> s = Transaction.fromStockDataMono(iexClient.get()
+    return recordTxnRequest.flatMap(req ->
+     iexClient.get()
           .uri("/stock/{symbol}/single/{date}", req.getSymbol().toUpperCase(), req.getTxnDate())
-          .retrieve().bodyToMono(StockData.class));
-    })
+          .retrieve().bodyToMono(StockData.class).map(s -> new Transaction(req, s)).flatMap(t -> txnRpsy.save(t)));
 
-    return txn.flatMap(t -> txnRpsy.save(t));
   }
 }

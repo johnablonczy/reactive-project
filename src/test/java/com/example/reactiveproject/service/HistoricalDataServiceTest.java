@@ -77,7 +77,7 @@ public class HistoricalDataServiceTest {
     when(txnRpsy.save(any(Transaction.class)))
         .thenReturn(Mono.just(transaction));
 
-    Mono<Transaction> transactionMono = historicalDataService.recordTransaction(recordTxnRequest);
+    Mono<Transaction> transactionMono = historicalDataService.recordTransaction(Mono.just(recordTxnRequest));
 
     verify(responseSpecMock).bodyToMono(StockData.class);
 
