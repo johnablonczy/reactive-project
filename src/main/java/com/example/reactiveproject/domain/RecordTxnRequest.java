@@ -2,10 +2,10 @@ package com.example.reactiveproject.domain;
 
 import java.time.LocalDate;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import com.example.reactiveproject.validation.DateBeforeConstraint;
+import com.example.reactiveproject.validation.SymbolMatchConstraint;
+import lombok.*;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 
 
@@ -16,7 +16,12 @@ import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 public class RecordTxnRequest {
   @PrimaryKey
   private UUID txnId = UUID.randomUUID();
+  @NonNull
+  @SymbolMatchConstraint
   private String symbol;
+  @NonNull
   private String firm;
+  @NonNull
+  @DateBeforeConstraint("2024-02-01")
   private LocalDate txnDate;
 }

@@ -8,6 +8,8 @@ import com.example.reactiveproject.service.HistoricalDataService;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -99,18 +102,10 @@ public class HistoricalDataController {
   @PostMapping(path = "/transaction",
   consumes = MediaType.APPLICATION_JSON_VALUE,
   produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<String> recordTransaction(@RequestBody RecordTxnRequest recordTxnRequest) {
-    Mono<RecordTxnRequest> recordTxnRequestMono = Mono.just(recordTxnRequest);
-
-    return recordTxnRequestMono.flatMap(req -> {
-      if(!acceptedSymbols.contains(req.getSymbol().toUpperCase())) {
-        return Mono.just("Improper transaction request received: Symbol not accepted symbol={"+req.getSymbol()+"}. Use an accepted symbol: "+acceptedSymbols);
-      }
-      if(req.getTxnDate().isAfter(LocalDate.of(2024, 2, 1))) {
-        return Mono.just("Improper transaction request received: Date past 2024-02-01 date={"+req.getTxnDate()+"}. Use a date on or before 2024-02-01");
-      }
-      Mono<Transaction> txn = historicalDataService.recordTransaction(Mono.just(req));
-      return txn.map(t -> "Transaction successfully recorded txnId="+t.getTxnId());
-    });
+  public Mono<String> recordTransaction(@Valid @RequestBody Mono<RecordTxnRequest> recordTxnRequest) {
+    return recordTxnRequest
+            .flatMap(req -> historicalDataService.recordTransaction(req))
+            .onErrorResume(WebExchangeBindException.class, ex -> Mono.just(Transaction.builder().symbol(ex.getMessage()).build()))
+            .map(txn -> "Transaction successfully recorded txnId="+txn.getTxnId());
   }
 }

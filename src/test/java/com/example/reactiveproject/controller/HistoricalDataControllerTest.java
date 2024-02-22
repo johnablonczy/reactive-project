@@ -114,10 +114,10 @@ public class HistoricalDataControllerTest {
 
     Transaction transaction = new Transaction(recordTxnRequest, stockData);
 
-    when(historicalDataService.recordTransaction(Mono.just(recordTxnRequest))).thenReturn(
+    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
         Mono.just(transaction));
 
-    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(recordTxnRequest);
+    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(Mono.just(recordTxnRequest));
 
     StepVerifier.create(recordTransactionResponse)
         .expectNext("Transaction successfully recorded txnId="+uuid)
@@ -135,7 +135,20 @@ public class HistoricalDataControllerTest {
         .txnDate(LocalDate.ofYearDay(2024, 30))
         .build();
 
-    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(recordTxnRequest);
+    StockData stockData = StockData.builder()
+            .symbol("AAPL")
+            .open(BigDecimal.TEN)
+            .close(BigDecimal.valueOf(20))
+            .low(BigDecimal.ONE)
+            .high(BigDecimal.valueOf(30))
+            .build();
+
+    Transaction transaction = new Transaction(recordTxnRequest, stockData);
+
+    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
+            Mono.just(transaction));
+
+    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(Mono.just(recordTxnRequest));
 
     StepVerifier.create(recordTransactionResponse)
         .expectNext("Improper transaction request received: Symbol not accepted symbol={ASDF}. Use an accepted symbol: [AAPL, AMZN, BAC, IBM, GOOG, MS, MSFT, TSLA]")
@@ -153,7 +166,20 @@ public class HistoricalDataControllerTest {
         .txnDate(LocalDate.of(2024, 2, 2))
         .build();
 
-    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(recordTxnRequest);
+    StockData stockData = StockData.builder()
+            .symbol("AAPL")
+            .open(BigDecimal.TEN)
+            .close(BigDecimal.valueOf(20))
+            .low(BigDecimal.ONE)
+            .high(BigDecimal.valueOf(30))
+            .build();
+
+    Transaction transaction = new Transaction(recordTxnRequest, stockData);
+
+    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
+            Mono.just(transaction));
+
+    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(Mono.just(recordTxnRequest));
 
     StepVerifier.create(recordTransactionResponse)
         .expectNext("Improper transaction request received: Date past 2024-02-01 date={2024-02-02}. Use a date on or before 2024-02-01")

@@ -40,12 +40,11 @@ public class HistoricalDataService {
    * @param recordTxnRequest RecordTxnRequest object which holds request info (symbol, firm, date)
    * @return Transaction saved in DB
    */
-  public Mono<Transaction> recordTransaction(Mono<RecordTxnRequest> recordTxnRequest) {
-
-    return recordTxnRequest.flatMap(req ->
-     iexClient.get()
-          .uri("/stock/{symbol}/single/{date}", req.getSymbol().toUpperCase(), req.getTxnDate())
-          .retrieve().bodyToMono(StockData.class).map(s -> new Transaction(req, s)).flatMap(t -> txnRpsy.save(t)));
-
+  public Mono<Transaction> recordTransaction(RecordTxnRequest recordTxnRequest) {
+    return iexClient.get()
+            .uri("/stock/{symbol}/single/{date}", recordTxnRequest.getSymbol().toUpperCase(), recordTxnRequest.getTxnDate())
+            .retrieve().bodyToMono(StockData.class)
+            .map(stockData -> new Transaction(recordTxnRequest, stockData))
+            .flatMap(txn -> txnRpsy.save(txn));
   }
 }
