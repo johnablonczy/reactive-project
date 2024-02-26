@@ -28,12 +28,12 @@ import reactor.test.StepVerifier;
 @WebFluxTest(HistoricalDataService.class)
 @RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataServiceTest {
-  @Mock
-  WebClient iexClient;
-  @Mock
-  TxnRpsy txnRpsy;
   @InjectMocks
-  HistoricalDataService historicalDataService;
+  private HistoricalDataService historicalDataService;
+  @Mock
+  private WebClient iexClient;
+  @Mock
+  private TxnRpsy txnRpsy;
   @Mock
   @SuppressWarnings("rawtypes")
   private WebClient.RequestHeadersUriSpec requestHeadersUriSpecMock;
@@ -79,12 +79,12 @@ public class HistoricalDataServiceTest {
 
     Mono<Transaction> transactionMono = historicalDataService.recordTransaction(recordTxnRequest);
 
-    verify(responseSpecMock).bodyToMono(StockData.class);
-
-    verify(txnRpsy, times(1)).save(any());
-
     StepVerifier.create(transactionMono)
         .expectNext(transaction)
         .verifyComplete();
+
+    verify(responseSpecMock).bodyToMono(StockData.class);
+
+    verify(txnRpsy).save(any());
   }
 }

@@ -23,15 +23,17 @@ public class HistoricalDataService {
 
   /**
    * Calls LocalIex REST endpoint to return StockData objects based on criteria
-   * @param getPricesRequestMono Request object which holds symbol and range.
+   * @param getPricesRequest Request object which holds symbol and range.
    *                             Accepted symbols are: AAPL, AMZN, IBM, GOOG, BAC, MS, MSFT, TSLA
    *                             Accepted ranges are: ytd, nD, nW, nY where n is an integer. Defaults to return all data for symbol.
    * @return zero or more StockData objects matching criteria
    */
-  public Flux<StockData> getHistoricalDataForSymbolAndRange(Mono<GetPricesRequest> getPricesRequestMono) {
-    return getPricesRequestMono.flatMapMany(req -> iexClient.get()
-        .uri("/stock/{symbol}/chart/{range}", req.getSymbol(), req.getRange())
-        .retrieve().bodyToFlux(StockData.class));
+  public Flux<StockData> getHistoricalDataForSymbolAndRange(GetPricesRequest getPricesRequest) {
+
+    return iexClient.get()
+        .uri("/stock/{symbol}/chart/{range}", getPricesRequest.getSymbol(),
+            getPricesRequest.getRange())
+        .retrieve().bodyToFlux(StockData.class);
   }
 
   /**
@@ -43,7 +45,8 @@ public class HistoricalDataService {
   public Mono<Transaction> recordTransaction(RecordTxnRequest recordTxnRequest) {
     return iexClient.get()
             .uri("/stock/{symbol}/single/{date}", recordTxnRequest.getSymbol().toUpperCase(), recordTxnRequest.getTxnDate())
-            .retrieve().bodyToMono(StockData.class)
+        .retrieve()
+        .bodyToMono(StockData.class)
             .map(stockData -> new Transaction(recordTxnRequest, stockData))
             .flatMap(txn -> txnRpsy.save(txn));
   }

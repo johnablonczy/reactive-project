@@ -21,6 +21,6 @@ public class SymbolMatchValidator implements ConstraintValidator<SymbolMatchCons
     };
     @Override
     public boolean isValid(String symbolField, ConstraintValidatorContext cxt) {
-        return acceptedSymbols.contains(symbolField);
+        return acceptedSymbols.contains(symbolField.toUpperCase());
     }
 }

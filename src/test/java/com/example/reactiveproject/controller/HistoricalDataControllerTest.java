@@ -1,6 +1,7 @@
 package com.example.reactiveproject.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.ACCEPT;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -28,14 +29,15 @@ import reactor.test.StepVerifier;
 public class HistoricalDataControllerTest {
 
   @InjectMocks
-  HistoricalDataController historicalDataController;
+  private HistoricalDataController historicalDataController;
 
   @Mock
   private HistoricalDataService historicalDataService;
 
   @Test
   @SuppressWarnings("unchecked")
-  public void testGetHistoricalData() {
+  public void testPostHistoricalData() {
+    GetPricesRequest request = new GetPricesRequest("aapl", "1w");
 
     Flux<StockData> response = Flux.just(
         generateTestStockData(0),
@@ -45,10 +47,10 @@ public class HistoricalDataControllerTest {
         generateTestStockData(4)
     );
 
-    when(historicalDataService.getHistoricalDataForSymbolAndRange(any(Mono.class)))
+    when(historicalDataService.getHistoricalDataForSymbolAndRange(request))
         .thenReturn(response);
 
-    Flux<StockData> stockDataFlux = historicalDataController.getPricesFromSymbolAndRange("aapl", "1w");
+    Flux<StockData> stockDataFlux = historicalDataController.postPricesFromSymbolAndRange(Mono.just(request));
 
     StepVerifier.create(stockDataFlux)
         .expectNext(generateTestStockData(0))
@@ -56,28 +58,6 @@ public class HistoricalDataControllerTest {
         .expectNext(generateTestStockData(2))
         .expectNext(generateTestStockData(3))
         .expectNext(generateTestStockData(4))
-        .verifyComplete();
-  }
-
-  @Test
-  public void testGetHistoricalDataBadSymbol() {
-    Flux<StockData> stockDataFlux = historicalDataController.getPricesFromSymbolAndRange("asdf", "1w");
-
-    StepVerifier.create(stockDataFlux)
-        .expectNext(StockData.builder()
-            .symbol("Improper price request received: Symbol not accepted symbol={asdf}. Use an accepted symbol: [AAPL, AMZN, BAC, IBM, GOOG, MS, MSFT, TSLA]")
-            .build())
-        .verifyComplete();
-  }
-
-  @Test
-  public void testGetHistoricalDataBadRange() {
-    Flux<StockData> stockDataFlux = historicalDataController.getPricesFromSymbolAndRange("aapl", "1h");
-
-    StepVerifier.create(stockDataFlux)
-        .expectNext(StockData.builder()
-            .symbol("Improper price request received: Range not accepted range={1h}. Use an accepted range: ytd, nD, nW, nY where n is an integer")
-            .build())
         .verifyComplete();
   }
 
@@ -112,78 +92,17 @@ public class HistoricalDataControllerTest {
         .high(BigDecimal.valueOf(30))
         .build();
 
-    Transaction transaction = new Transaction(recordTxnRequest, stockData);
+    Transaction response = new Transaction(recordTxnRequest, stockData);
 
     when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
-        Mono.just(transaction));
+        Mono.just(response));
 
     Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(Mono.just(recordTxnRequest));
 
     StepVerifier.create(recordTransactionResponse)
         .expectNext("Transaction successfully recorded txnId="+uuid)
         .verifyComplete();
+
+    verify(historicalDataService).recordTransaction(recordTxnRequest);
   }
-
-  @Test
-  public void testRecordTransactionBadSymbol() {
-    UUID uuid = UUID.randomUUID();
-
-    RecordTxnRequest recordTxnRequest = RecordTxnRequest.builder()
-        .txnId(uuid)
-        .firm("GS")
-        .symbol("ASDF")
-        .txnDate(LocalDate.ofYearDay(2024, 30))
-        .build();
-
-    StockData stockData = StockData.builder()
-            .symbol("AAPL")
-            .open(BigDecimal.TEN)
-            .close(BigDecimal.valueOf(20))
-            .low(BigDecimal.ONE)
-            .high(BigDecimal.valueOf(30))
-            .build();
-
-    Transaction transaction = new Transaction(recordTxnRequest, stockData);
-
-    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
-            Mono.just(transaction));
-
-    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(Mono.just(recordTxnRequest));
-
-    StepVerifier.create(recordTransactionResponse)
-        .expectNext("Improper transaction request received: Symbol not accepted symbol={ASDF}. Use an accepted symbol: [AAPL, AMZN, BAC, IBM, GOOG, MS, MSFT, TSLA]")
-        .verifyComplete();
-  }
-
-  @Test
-  public void testRecordTransactionBadDate() {
-    UUID uuid = UUID.randomUUID();
-
-    RecordTxnRequest recordTxnRequest = RecordTxnRequest.builder()
-        .txnId(uuid)
-        .firm("GS")
-        .symbol("AAPL")
-        .txnDate(LocalDate.of(2024, 2, 2))
-        .build();
-
-    StockData stockData = StockData.builder()
-            .symbol("AAPL")
-            .open(BigDecimal.TEN)
-            .close(BigDecimal.valueOf(20))
-            .low(BigDecimal.ONE)
-            .high(BigDecimal.valueOf(30))
-            .build();
-
-    Transaction transaction = new Transaction(recordTxnRequest, stockData);
-
-    when(historicalDataService.recordTransaction(recordTxnRequest)).thenReturn(
-            Mono.just(transaction));
-
-    Mono<String> recordTransactionResponse = historicalDataController.recordTransaction(Mono.just(recordTxnRequest));
-
-    StepVerifier.create(recordTransactionResponse)
-        .expectNext("Improper transaction request received: Date past 2024-02-01 date={2024-02-02}. Use a date on or before 2024-02-01")
-        .verifyComplete();
-  }
-  
 }
