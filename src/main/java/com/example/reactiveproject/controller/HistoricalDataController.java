@@ -44,7 +44,8 @@ public class HistoricalDataController {
   public Flux<StockData> postPricesFromSymbolAndRange(@Valid @RequestBody Mono<GetPricesRequest> getPricesRequest) {
     return getPricesRequest
             .doOnNext(req -> log.info("HistoricalDataController: Successfully received GetPricesRequest={"+req.toString()+"}"))
-            .flatMapMany(req -> historicalDataService.getHistoricalDataForSymbolAndRange(req));
+            .flatMapMany(req -> historicalDataService.getHistoricalDataForSymbolAndRange(req))
+            .doOnError(err -> log.severe("HistoricalDataController: Error occurred while fetching prices err={"+err.getMessage()+"}"));
   }
 
   /**
@@ -59,6 +60,7 @@ public class HistoricalDataController {
     return recordTxnRequest
             .doOnNext(req -> log.info("HistoricalDataController: Successfully received RecordTxnRequest={"+req.toString()+"}"))
             .flatMap(req -> historicalDataService.recordTransaction(req))
-            .map(txn -> "Transaction successfully recorded txnId="+txn.getTxnId());
+            .map(txn -> "Transaction successfully recorded txnId="+txn.getTxnId())
+            .doOnError(err -> log.severe("HistoricalDataController: Error occurred while recording transaction err={"+err.getMessage()+"}"));
   }
 }

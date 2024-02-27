@@ -33,7 +33,10 @@ public class HistoricalDataService {
         .uri("/stock/{symbol}/chart/{range}", getPricesRequest.getSymbol(),
             getPricesRequest.getRange())
         .retrieve().bodyToFlux(StockData.class)
-            .doOnNext(req -> log.info("HistoricalDataService successfully received StockData={"+req.toString()+"}"));
+            .doOnRequest((x) -> log.info("HistoricalDataService: Attempting to fetch StockData"))
+            .doOnNext(req -> log.info("HistoricalDataService: Successfully received StockData={"+req.toString()+"}"))
+            .doOnError(err -> log.severe("HistoricalService: Error occurred while fetching prices err={"+err.getMessage()+"}"))
+            .doOnComplete(() -> log.info("HistoricalDataService: Recieved all StockData, ending fetch"));
   }
 
   /**
@@ -49,6 +52,7 @@ public class HistoricalDataService {
         .bodyToMono(StockData.class)
             .map(stockData -> new Transaction(recordTxnRequest, stockData))
             .flatMap(txn -> txnRpsy.save(txn))
-            .doOnNext(req -> log.info("HistoricalDataService successfully recorded Transaction={"+req.toString()+"}"));
+            .doOnNext(req -> log.info("HistoricalDataService: Successfully recorded Transaction={"+req.toString()+"}"))
+            .doOnError(err -> log.severe("HistoricalDataService: Error occurred while recording transaction err={"+err.getMessage()+"}"));
   }
 }

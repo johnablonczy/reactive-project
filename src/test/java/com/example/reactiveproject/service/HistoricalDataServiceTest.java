@@ -15,6 +15,7 @@ import com.example.reactiveproject.domain.StockData;
 import com.example.reactiveproject.domain.Transaction;
 import com.example.reactiveproject.repository.TxnRpsy;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.Test;
@@ -30,12 +31,12 @@ import reactor.test.StepVerifier;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataServiceTest {
-  @InjectMocks
-  private HistoricalDataService historicalDataService;
   @Mock
   private WebClient iexClient;
   @Mock
   private TxnRpsy txnRpsy;
+  @InjectMocks
+  private HistoricalDataService historicalDataService;
   @Mock
   @SuppressWarnings("rawtypes")
   private WebClient.RequestHeadersUriSpec requestHeadersUriSpecMock;
@@ -64,7 +65,7 @@ public class HistoricalDataServiceTest {
 
     when(iexClient.get())
             .thenReturn(requestHeadersUriSpecMock);
-    when(requestHeadersUriSpecMock.uri(anyString()))
+    when(requestHeadersUriSpecMock.uri("/stock/{symbol}/chart/{range}", getPricesRequest.getSymbol(), getPricesRequest.getRange()))
             .thenReturn(requestHeadersSpecMock);
     when(requestHeadersSpecMock.retrieve())
             .thenReturn(responseSpecMock);
@@ -80,6 +81,8 @@ public class HistoricalDataServiceTest {
             .expectNext(generateTestStockData(3))
             .expectNext(generateTestStockData(4))
             .verifyComplete();
+
+    verify(responseSpecMock).bodyToFlux(StockData.class);
   }
 
   public StockData generateTestStockData(int n) {

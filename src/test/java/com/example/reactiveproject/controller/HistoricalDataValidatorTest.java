@@ -21,9 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataValidatorTest {
-
-  final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-  final Validator validator = factory.getValidator();
+  final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
   @Test
   public void testRecordTxnRequestValid() {
