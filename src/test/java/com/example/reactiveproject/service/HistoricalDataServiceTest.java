@@ -3,11 +3,13 @@ package com.example.reactiveproject.service;
 
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.reactiveproject.domain.GetPricesRequest;
 import com.example.reactiveproject.domain.RecordTxnRequest;
 import com.example.reactiveproject.domain.StockData;
 import com.example.reactiveproject.domain.Transaction;
@@ -22,10 +24,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-@WebFluxTest(HistoricalDataService.class)
 @RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataServiceTest {
   @InjectMocks
@@ -43,6 +45,55 @@ public class HistoricalDataServiceTest {
   @Mock
   @SuppressWarnings(("rawtypes"))
   private WebClient.ResponseSpec responseSpecMock;
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testGetPrices() {
+
+    GetPricesRequest getPricesRequest = GetPricesRequest.builder()
+            .symbol("aapl")
+            .range("ytd")
+            .build();
+
+    Flux<StockData> stockData = Flux.just(
+            generateTestStockData(0),
+            generateTestStockData(1),
+            generateTestStockData(2),
+            generateTestStockData(3),
+            generateTestStockData(4)
+    );
+
+    when(iexClient.get())
+            .thenReturn(requestHeadersUriSpecMock);
+    when(requestHeadersUriSpecMock.uri(anyString()))
+            .thenReturn(requestHeadersSpecMock);
+    when(requestHeadersSpecMock.retrieve())
+            .thenReturn(responseSpecMock);
+    when(responseSpecMock.bodyToFlux(StockData.class))
+            .thenReturn(stockData);
+
+    Flux<StockData> stockDataFlux = historicalDataService.getHistoricalDataForSymbolAndRange(getPricesRequest);
+
+    StepVerifier.create(stockDataFlux)
+            .expectNext(generateTestStockData(0))
+            .expectNext(generateTestStockData(1))
+            .expectNext(generateTestStockData(2))
+            .expectNext(generateTestStockData(3))
+            .expectNext(generateTestStockData(4))
+            .verifyComplete();
+  }
+
+  public StockData generateTestStockData(int n) {
+    return StockData.builder()
+            .date(LocalDate.ofYearDay(2024, 30-n))
+            .open(BigDecimal.valueOf(10))
+            .close(BigDecimal.valueOf(20))
+            .high(BigDecimal.valueOf(30))
+            .low(BigDecimal.valueOf(5))
+            .volume(1)
+            .symbol("AAPL")
+            .build();
+  }
+
   @Test
   @SuppressWarnings("unchecked")
   public void testRecordTransaction() {

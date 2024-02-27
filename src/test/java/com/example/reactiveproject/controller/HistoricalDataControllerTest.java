@@ -24,7 +24,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-@WebFluxTest(HistoricalDataController.class)
 @RunWith(MockitoJUnitRunner.class)
 public class HistoricalDataControllerTest {
 
@@ -37,7 +36,10 @@ public class HistoricalDataControllerTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testPostHistoricalData() {
-    GetPricesRequest request = new GetPricesRequest("aapl", "1w");
+    GetPricesRequest request = GetPricesRequest.builder()
+            .symbol("aapl")
+            .range("ytd")
+            .build();
 
     Flux<StockData> response = Flux.just(
         generateTestStockData(0),

@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,9 +25,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
+@AllArgsConstructor
+@Log
 public class HistoricalDataController {
 
-  @Autowired
   HistoricalDataService historicalDataService;
 
   /**
@@ -39,7 +42,9 @@ public class HistoricalDataController {
           consumes = MediaType.APPLICATION_JSON_VALUE,
           produces = MediaType.APPLICATION_JSON_VALUE)
   public Flux<StockData> postPricesFromSymbolAndRange(@Valid @RequestBody Mono<GetPricesRequest> getPricesRequest) {
-    return getPricesRequest.flatMapMany(req -> historicalDataService.getHistoricalDataForSymbolAndRange(req));
+    return getPricesRequest
+            .doOnNext(req -> log.info("HistoricalDataController: Successfully received GetPricesRequest={"+req.toString()+"}"))
+            .flatMapMany(req -> historicalDataService.getHistoricalDataForSymbolAndRange(req));
   }
 
   /**
@@ -52,6 +57,7 @@ public class HistoricalDataController {
   produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<String> recordTransaction(@Valid @RequestBody Mono<RecordTxnRequest> recordTxnRequest) {
     return recordTxnRequest
+            .doOnNext(req -> log.info("HistoricalDataController: Successfully received RecordTxnRequest={"+req.toString()+"}"))
             .flatMap(req -> historicalDataService.recordTransaction(req))
             .map(txn -> "Transaction successfully recorded txnId="+txn.getTxnId());
   }

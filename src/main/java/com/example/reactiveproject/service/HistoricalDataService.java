@@ -13,8 +13,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
-@Log
 @AllArgsConstructor
+@Log
 public class HistoricalDataService {
 
   private WebClient iexClient;
@@ -29,11 +29,11 @@ public class HistoricalDataService {
    * @return zero or more StockData objects matching criteria
    */
   public Flux<StockData> getHistoricalDataForSymbolAndRange(GetPricesRequest getPricesRequest) {
-
     return iexClient.get()
         .uri("/stock/{symbol}/chart/{range}", getPricesRequest.getSymbol(),
             getPricesRequest.getRange())
-        .retrieve().bodyToFlux(StockData.class);
+        .retrieve().bodyToFlux(StockData.class)
+            .doOnNext(req -> log.info("HistoricalDataService successfully received StockData={"+req.toString()+"}"));
   }
 
   /**
@@ -48,6 +48,7 @@ public class HistoricalDataService {
         .retrieve()
         .bodyToMono(StockData.class)
             .map(stockData -> new Transaction(recordTxnRequest, stockData))
-            .flatMap(txn -> txnRpsy.save(txn));
+            .flatMap(txn -> txnRpsy.save(txn))
+            .doOnNext(req -> log.info("HistoricalDataService successfully recorded Transaction={"+req.toString()+"}"));
   }
 }
