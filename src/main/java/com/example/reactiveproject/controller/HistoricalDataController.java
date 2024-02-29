@@ -12,6 +12,7 @@ import java.util.List;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -26,6 +27,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @AllArgsConstructor
+@NoArgsConstructor
 @Log
 public class HistoricalDataController {
 

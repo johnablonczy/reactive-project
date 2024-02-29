@@ -6,6 +6,7 @@ import com.example.reactiveproject.domain.StockData;
 import com.example.reactiveproject.domain.Transaction;
 import com.example.reactiveproject.repository.TxnRpsy;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 @Service
 @AllArgsConstructor
+@NoArgsConstructor
 @Log
 public class HistoricalDataService {
 
